@@ -1,0 +1,2 @@
+hdfs dfs -put pt-v-* /user/dat254 
+hdfs dfs -getmerge /user/dat/pt-v-* final.dat
