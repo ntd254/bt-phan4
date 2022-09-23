@@ -3,10 +3,10 @@ package org.example;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
-import org.apache.spark.sql.Dataset;
-import org.apache.spark.sql.Row;
-import org.apache.spark.sql.SparkSession;
+import org.apache.spark.sql.*;
+import org.apache.spark.sql.expressions.Window;
 
+import javax.xml.crypto.Data;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -53,16 +53,38 @@ public class Main {
         logDF.write().parquet("hdfs://localhost:9000/user/dat254/pageviewlog");
     }
 
-    public void getIp() {
-//        spark.sql("select ip, count(distinct guid) from log group by ip having count(distinct guid) = (select max(num) from (select count(distinct guid) as num from log group by ip))").show(1000)
+    public static void ipMostGuid() {
+        SparkSession sparkSession = SparkSession
+                .builder()
+                .appName("spark")
+                .getOrCreate();
+        Dataset<Row> log = sparkSession.read().parquet("hdfs://localhost:9000/user/dat254/pageviewlog");
+        log.createOrReplaceTempView("log");
+        Dataset<Row> result = sparkSession.sql("select ip, count(distinct guid) from log group by ip order by count(distinct guid) desc limit 1000");
     }
 
-    public void getGuid() {
-//        spark.sql("select guid, timeCreate, cookieCreate, to_unix_timestamp(timeCreate) - to_unix_timestamp(cookieCreate) as differenceBySecond from log where (to_unix_timestamp(timeCreate)
-//                - to_unix_timestamp(cookieCreate)) < 1800").show()
+    public static void guidWithDifference() {
+        SparkSession sparkSession = SparkSession
+                .builder()
+                .appName("spark")
+                .getOrCreate();
+        Dataset<Row> log = sparkSession.read().parquet("hdfs://localhost:9000/user/dat254/pageviewlog");
+        log.createOrReplaceTempView("log");
+        Dataset<Row> result = sparkSession.sql("select guid, timeCreate, cookieCreate, to_unix_timestamp(timeCreate) - to_unix_timestamp(cookieCreate) as differenceBySecond " +
+                "from log where (to_unix_timestamp(timeCreate) - to_unix_timestamp(cookieCreate)) < 1800");
     }
 
-    public void getUrl() {
-//        spark.sql("select guid, concat(domain, path) as url from log as outerLog where to_date(timeCreate) = \"2018-08-10\" group by guid, domain, path having count(*) = (select max(num) from (select count(*) as num from log as innerLog where outerLog.guid = innerLog.guid and to_date(timeCreate) = \"2018-08-10\" group by guid, domain, path))").show(false)
+    public static void mostUrlEachGuid() {
+//        val df1 = spark.sql("select guid, concat(domain, path) as url, count(*) as num from log group by guid, domain, pa
+//                th")
+//        df1.withColumn("rank", rank().over(Window.partitionBy("guid").orderBy(col("num").desc))).filter("rank = 1")
+        SparkSession sparkSession = SparkSession
+                .builder()
+                .appName("spark")
+                .getOrCreate();
+        Dataset<Row> log = sparkSession.read().parquet("hdfs://localhost:9000/user/dat254/pageviewlog");
+        log.createOrReplaceTempView("log");
+        Dataset<Row> result = sparkSession.sql("select guid, concat(domain, path) as url, count(*) as num from logs group by guid, domain, path")
+                .withColumn("rank", functions.rank().over(Window.partitionBy("guid").orderBy(new Column("num").desc()))).where("rank = 1");
     }
 }
