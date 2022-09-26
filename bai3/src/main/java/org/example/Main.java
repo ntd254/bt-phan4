@@ -15,6 +15,9 @@ import java.util.Arrays;
 public class Main {
     public static void main(String[] args) {
         createParquetFile();
+        ipMostGuid();
+        guidWithDifference();
+        mostUrlEachGuid();
     }
 
     public static void createParquetFile() {
@@ -61,6 +64,7 @@ public class Main {
         Dataset<Row> log = sparkSession.read().parquet("hdfs://localhost:9000/user/dat254/pageviewlog");
         log.createOrReplaceTempView("log");
         Dataset<Row> result = sparkSession.sql("select ip, count(distinct guid) from log group by ip order by count(distinct guid) desc limit 1000");
+        result.show(false);
     }
 
     public static void guidWithDifference() {
@@ -72,19 +76,20 @@ public class Main {
         log.createOrReplaceTempView("log");
         Dataset<Row> result = sparkSession.sql("select guid, timeCreate, cookieCreate, to_unix_timestamp(timeCreate) - to_unix_timestamp(cookieCreate) as differenceBySecond " +
                 "from log where (to_unix_timestamp(timeCreate) - to_unix_timestamp(cookieCreate)) < 1800");
+        result.show(false);
     }
 
     public static void mostUrlEachGuid() {
-//        val df1 = spark.sql("select guid, concat(domain, path) as url, count(*) as num from log group by guid, domain, pa
-//                th")
-//        df1.withColumn("rank", rank().over(Window.partitionBy("guid").orderBy(col("num").desc))).filter("rank = 1")
         SparkSession sparkSession = SparkSession
                 .builder()
                 .appName("spark")
                 .getOrCreate();
         Dataset<Row> log = sparkSession.read().parquet("hdfs://localhost:9000/user/dat254/pageviewlog");
         log.createOrReplaceTempView("log");
-        Dataset<Row> result = sparkSession.sql("select guid, concat(domain, path) as url, count(*) as num from logs group by guid, domain, path")
-                .withColumn("rank", functions.rank().over(Window.partitionBy("guid").orderBy(new Column("num").desc()))).where("rank = 1");
+        Dataset<Row> result = sparkSession.sql("select guid, concat(domain, path) as url, count(*) as num from log group by guid, domain, path")
+                .withColumn("rank", functions.rank().over(Window.partitionBy("guid").orderBy(new Column("num").desc())))
+                .where("rank = 1")
+                .orderBy(new Column("num").desc());
+        result.show(false);
     }
 }
