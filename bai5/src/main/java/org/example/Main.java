@@ -9,6 +9,19 @@ import java.io.IOException;
 import java.util.NavigableMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+
+
+/* Schema
+Table: departments
+Row key: departmentId
+column family: employee, manager, departmentInfo
+Ex: put 'departments', 'd001', 'employee:10014', '2000-04-14|2020-11-23'
+
+Table: employee
+Row key: employeeId
+column family: title, salary, employeeInfo
+Ex: put 'employee', '10014', 'salary:15000', '2000-04-14|2020-11-23'*/
+
 public class Main {
 
 

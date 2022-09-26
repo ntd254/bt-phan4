@@ -11,6 +11,13 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
+
+/* Schema
+Table: log
+Row key: guid
+column family: url, ip, cookieCreate, otherInfo
+Ex: put 'log', '1234', 'url:2020-09-10 10-24-30', 'https://kenh14/tin-the-thao'*/
+
 public class Main {
     public static void main(String[] args) {
         System.out.println("Hello world!");
